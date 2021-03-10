@@ -1,0 +1,62 @@
+---
+
+  - name: Settings.py - adjust AddOn Client_ID
+    lineinfile:
+      path: /data/git/blender-id/blenderid/settings.py
+      regexp: BLENDER_ID_ADDON_CLIENT_ID = "SPECIAL-SNOWFLAKE-57"
+      line: BLENDER_ID_ADDON_CLIENT_ID = "{{ bc_oauth_blender_id }}"
+      state: present
+
+
+  - name: Settings.py - adjust default email
+    lineinfile:
+      path: /data/git/blender-id/blenderid/settings.py
+      regexp: DEFAULT_FROM_EMAIL = "webmaster@localhost"
+      line: DEFAULT_FROM_EMAIL = "{{ bid_webmaster_email }}"
+      state: present
+
+  - name: Settings.py -	OAuth2 Provider Schemes
+    lineinfile:
+      path: /data/git/blender-id/blenderid/settings.py
+      regexp: # OAUTH2_PROVIDER['ALLOWED_REDIRECT_URI_SCHEMES'] = ['http', 'https']
+      line: OAUTH2_PROVIDER['ALLOWED_REDIRECT_URI_SCHEMES'] = ['http']
+      state: present
+
+  - name: Settings.py -	INTERNAL_IDS
+    lineinfile:
+      path: /data/git/blender-id/blenderid/settings.py
+      regexp: INTERNAL_IPS = ["127.0.0.1"] 
+      line: INTERNAL_IPS = ["127.0.0.1", "{{ bid_server_name }}"]
+      state: present
+
+  - name: Settings.py -	Allowed Hosts
+    lineinfile:
+      path: /data/git/blender-id/blenderid/settings.py
+      regexp: # ALLOWED_HOSTS = ['*']
+      line: ALLOWED_HOSTS = ['*']
+      state: present
+
+  - name: Blender_Cloud_Devserver - client_id
+    lineinfile:
+      path: /data/git/blender-id/bid_main/fixtures/blender_cloud_devserver.json
+      regexp: "client_id"
+      line: '         "client_id": "{{ bc_oauth_blender_id }}",'
+      state: present
+
+  - name: Blender_Cloud_Devserver - client_secret
+    lineinfile:
+      path: /data/git/blender-id/bid_main/fixtures/blender_cloud_devserver.json
+      regexp: "client_secret"
+      line: '         "client_secret": "{{ bc_secret }}",'
+      state: present
+
+  - name: Blender_Cloud_Devserver - redirect_uris
+    lineinfile:
+      path: /data/git/blender-id/bid_main/fixtures/blender_cloud_devserver.json
+      regexp: "redirect_uris"
+      line: '         ""redirect_uris": "http://cloud.local:{{ bc_server_port }}/oauth/blender-id/authorized\r\nhttp://cloud.local/oauth/blender-id/authorized",'
+      state: present
+
+
+
+...

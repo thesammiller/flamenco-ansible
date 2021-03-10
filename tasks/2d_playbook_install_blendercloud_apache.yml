@@ -1,0 +1,49 @@
+---
+#
+# Blender Cloud - Flamenco Server Installation
+# Author: Sam Miller
+# Created: Spring 2021
+# Modified: Spring 2021
+#
+
+  - name: Install Apache - apt packages
+    become: yes
+    apt: name={{ item }} state=latest update_cache=yes
+    loop: [ 'apache2', 'libapache2-mod-xsendfile', 'libjpeg8', 'libtiff5', 'ffmpeg', 'rsyslog', 'logrotate']
+
+  - name: Copy Apache Files - remoteip.conf
+    shell: cp docker/4_run/apache/remoteip.conf /etc/apache2/mods-available
+    args:
+      chdir: /data/git/blender-cloud
+    become: yes
+
+  - name: Copy Apache Files - wsgi-py36
+    shell: cp docker/4_run/apache/wsgi-py36.* /etc/apache2/mods-available/
+    args:
+      chdir: /data/git/blender-cloud
+    become: yes
+
+  - name: a2enmod
+    shell: a2enmod remoteip && a2enmod rewrite && a2enmod wsgi-py36
+    become: yes
+
+  - name: Copy Apache Files - apache2.conf
+    shell: cp docker/4_run/apache/apache2.conf /etc/apache2/apache2.conf
+    args:
+      chdir: /data/git/blender-cloud
+    become: yes
+
+  - name: Copy Apache Files - 000-default.conf
+    shell: cp docker/4_run/apache/000-default.conf /etc/apache2/000-default.conf
+    args:
+      chdir: /data/git/blender-cloud
+    become: yes
+
+  - name: Copy Apache Files - logrotate.conf
+    shell: cp docker/4_run/apache/logrotate.conf /etc/logrotate.d/apache2
+    args:
+      chdir: /data/git/blender-cloud
+    become: yes
+
+
+...

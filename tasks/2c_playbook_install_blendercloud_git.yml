@@ -1,0 +1,87 @@
+---
+#
+# Blender Cloud - Flamenco Server Installation
+# Author: Sam Miller
+# Created: Spring 2021
+# Modified: Spring 2021
+#
+
+
+  - name: Install Git Files - Create /data
+    ansible.builtin.file:
+      path: /data
+      state: directory
+      mode: '0755'
+    become: yes
+
+  - name: Install Git Files - Create /data
+    ansible.builtin.file:
+      path: /data/git
+      state: directory
+      mode: '0755'
+    become: yes
+
+  - name: Change Ownership of /data
+    command: chown -R {{bc_user}}:{{bc_user}} /data
+    become: yes
+
+  - name: Clone Git Files - pillar-python-sdk.git
+    ansible.builtin.git:
+      repo: git://git.blender.org/pillar-python-sdk.git
+      dest: /data/git/pillar-python-sdk
+    
+  - name: Clone	Git Files - pillar.git
+    ansible.builtin.git:
+      repo: git://git.blender.org/pillar.git
+      dest: /data/git/pillar
+
+  - name: Clone	Git Files - attract.git
+    ansible.builtin.git:
+      repo: git://git.blender.org/attract.git
+      dest: /data/git/attract
+
+  - name: Clone Git Files - flamenco.git
+    ansible.builtin.git:
+      repo: git://git.blender.org/flamenco.git
+      dest: /data/git/flamenco
+
+  - name: Clone Git Files - pillar-svnman.git
+    ansible.builtin.git:
+      repo: git://git.blender.org/pillar-svnman.git
+      dest: /data/git/pillar-svnman
+
+  - name: Clone Git Files - blender-cloud.git
+    ansible.builtin.git:
+      repo: git://git.blender.org/blender-cloud.git
+      dest: /data/git/blender-cloud
+
+  - name: Install Poetry - pip3 wheel poetry
+    command: pip3 install wheel poetry==1.0
+
+  - name: Install Wheelhouse - Create Directories
+    ansible.builtin.file:
+      path: /data/wheelhouse
+      state: directory
+      mode: '0755'
+    become: yes
+
+  - name: Install Poetry - poetry install
+    shell: export CRYPTOGRAPHY_DONT_BUILD_RUST=1; /opt/python/bin/poetry install --no-dev
+    args:
+      chdir: /data/git/blender-cloud
+    
+  - name: Install Wheelhouse - Create requirements.txt
+    shell: poetry run pip3 freeze | grep -v '\(pillar\)\|\(^-[ef] \)' > /data/requirements.txt
+    args:
+      chdir: /data/git/blender-cloud
+
+
+  - name: Install Wheelhouse - pip3 wheel 
+    shell: pip3 wheel --wheel-dir=/data/wheelhouse -r requirements.txt
+    args:
+      chdir: /data
+    become: yes
+    
+
+
+...

@@ -1,0 +1,65 @@
+---
+#
+# Blender Cloud - Flamenco Server Installation
+# Author: Sam Miller
+# Created: Spring 2021
+# Modified: Spring 2021
+#
+
+  - name: Install Gulp - npm
+    apt: name=npm state=latest
+    become: yes
+    ignore_errors: yes
+
+  - name: Install Gulp - nodejs from nodesource
+    shell: "{{ item }}"
+    with_items:
+      - sudo curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+      - sudo apt -y install nodejs make gcc g++   
+    become: yes
+
+  - name: Install Gulp - gulp pillar
+    shell: "{{ item }}"
+    args:
+     chdir: /data/git/pillar
+    with_items:
+      - ./gulp
+      - npm install
+
+  - name: config local - make Blender-Cloud templates
+    shell: ./gulp
+    args: 
+      chdir: /data/git/blender-cloud
+
+  - name: Config Local - copy Flamenco templates
+    shell: ./gulp
+    args:
+      chdir: /data/git/flamenco
+
+  - name: Config Local - copy Pillar-Svnman templates
+    shell: ./gulp
+    args:
+      chdir: /data/git/pillar-svnman
+
+  - name: Config Local - copy Pillar templates
+    shell: ./gulp
+    args:
+      chdir: /data/git/pillar
+
+
+#  - name: Install Gulp - virtualenvwrapper
+#    shell: pip3 install virtualenvwrapper
+
+#  - name: Install Pillar Depencies
+#    shell: pip3 install email_validator
+
+  - name: Pip install dependencies
+    shell: pip3 install {{item}}
+    loop: ['virtualenvwrapper', 'email_validator']    
+
+    
+
+
+
+
+...

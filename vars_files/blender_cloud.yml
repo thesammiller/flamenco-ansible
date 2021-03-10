@@ -1,0 +1,6 @@
+bc_webmaster_email: "webmaster@local.com"
+bc_oauth_blender_id: "CLOUD-OF-SNOWFLAKES-40"
+bc_secret: "root"
+bc_server_name: "cloud.local"
+bc_user: "vagrant"
+bc_server_port: "5000"

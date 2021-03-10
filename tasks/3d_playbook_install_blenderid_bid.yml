@@ -1,0 +1,78 @@
+---
+
+  - name: Blender ID - poetry install dependencies
+    shell: poetry install
+    args:
+      chdir: /data/git/blender-id
+
+  - name: Blender ID - Create the database in MySQL
+    shell: mysqladmin create blender_id --default-character-set=utf8
+    ignore_errors: yes
+
+# manage.py
+  - name: Blender ID - migrate database to latest version
+    shell: poetry run ./manage.py migrate
+    args:
+      chdir: /data/git/blender-id
+
+  - name: Blender ID - createcachetable 
+    shell: poetry run ./manage.py createcachetable
+    args:
+      chdir: /data/git/blender-id
+
+  - name: Blender ID - create media directory
+    ansible.builtin.file:
+      path: /data/git/blender-id/media
+      state: directory
+
+# For production, set up a cron job that calls `flush_webhooks --flush -v 0` management command regularly.
+
+  - name: Blender ID - createsuperuser
+    shell: poetry run ./manage.py createsuperuser --noinput --email {{ bc_webmaster_email }}
+    args:
+      chdir: /data/git/blender-id
+     
+  - name: Blender ID - Load Fixtures
+    shell: poetry run ./manage.py loaddata "{{ item }}"
+    args:
+      chdir: /data/git/blender-id
+    with_items:
+      - default_site
+      - default_roles
+      - blender_cloud_devserver
+      - blender_cloud_dev_webhook
+      - flatpages
+
+  - name: Blender ID - collectmedia
+    shell: poetry run ./manage.py collectmedia --noinput
+    args:
+      chdir: /data/git/blender-id
+
+  - name: MySQL - Stop MySQL
+    service: name=mysql state=stopped
+    become: yes
+
+  - name: MySQL - set environment variables
+    shell: systemctl set-environment MYSQLD_OPTS="--skip-grant-tables"
+    become: yes
+
+  - name: MySQL - Start MySQL
+    service: name=mysql state=started
+    become: yes
+
+  - name: MySQL - confirm email address
+    shell: mysql -u root --execute="USE blender_id; UPDATE bid_main_user SET confirmed_email_at=\"2021-02-21 16:31:43.343342\";"
+
+  - name: MySQL - Stop MySQL
+    service: name=mysql state=stopped
+    become: yes
+
+  - name: MySQL - unset environment variables
+    shell: systemctl unset-environment MYSQLD_OPTS
+    become: yes
+
+  - name: MySQL - Start MySQL
+    service: name=mysql state=started
+    become: yes
+
+...

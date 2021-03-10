@@ -1,0 +1,97 @@
+---
+
+  - name: Install required system packages
+    become: yes
+    apt: name={{ item }} state=latest update_cache=yes
+    loop: [ 'tzdata', 'libbz2-dev', 'libsqlite3-dev', 'openssl', 'ca-certificates', 'locales']
+
+  - name: Install Python - add source
+    command: sed -i 's/^# deb-src/deb-src/' /etc/apt/sources.list
+    become: yes
+
+  - name: Install Python - required system packages
+    become: yes
+    apt: name={{ item }} state=latest update_cache=yes
+    loop: [ 'build-essential', 'apache2-dev', 'checkinstall', 'curl', 'zlib1g-dev', 'libssl-dev']
+
+  - name: Install Python - create home Python directory
+    ansible.builtin.file:
+      path: /home/{{bc_user}}/python
+      state: directory
+      mode: '0755'
+    become: yes
+
+  - name: Install Python - curl source
+    get_url: 
+      url: https://www.python.org/ftp/python/3.6.6/Python-3.6.6.tar.xz
+      dest: /home/vagrant
+
+  - name: Install Python - unzip source
+    unarchive: 
+      src: /home/{{bc_user}}/Python-3.6.6.tar.xz
+      dest: /home/{{bc_user}}/python
+      remote_src: yes
+    become: yes
+
+  - name: Install Python - remove source
+    command: rm -v /home/{{bc_user}}/Python-3.6.6.tar.xz
+ 
+  - name: Install Python - create /opt/python directory
+    ansible.builtin.file:
+      path: /opt/python
+      state: directory
+      mode: '0755'
+    become: yes
+
+  - name: Install Python - copy to /opt dir
+    command: cp -r /home/{{bc_user}}/python /opt
+    become: yes
+
+  - name: Install Python - change ownership
+    command: chown -R {{bc_user}}:{{bc_user}} /opt/python
+    become: yes
+
+
+  - name: Install Python - configure 
+    shell: "{{ item }}"
+    args:
+      chdir: /opt/python/Python-3.6.6/ 
+    with_items:
+      - ./configure --prefix=/opt/python --enable-ipv6 --enable-shared --with-ensurepip=upgrade -with-ssl
+      - make -j8 install    
+     
+  - name: Install Python - pip
+    command: /opt/python/bin/python3 -m pip install -U pip
+
+  - name: Install Python - ld.so.conf.d
+    shell: " {{ item }} "
+    with_items:
+      - echo /opt/python/lib > /etc/ld.so.conf.d/python.conf
+      - ldconfig
+      - exit
+    become: yes
+
+  - name: Install Python - adjust PATH
+    lineinfile:
+      dest: ~/.profile
+      line: export PATH=/opt/python/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+  - name: Install Python - symbolic link
+    shell: ln -s python3 python
+    become: yes
+    args:
+      chdir: /opt/python/bin
+
+  - name: Install Rust
+    shell: " {{ item }} "
+    args:
+      chdir: /home/vagrant
+    with_items:
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rust.sh
+      - sh rust.sh -y 
+
+  - name: Install virtualenv
+    shell: pip install virtualenvwrapper
+
+
+...

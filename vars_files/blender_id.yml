@@ -1,0 +1,4 @@
+bid_user: vagrant
+bid_server_name: id.local
+bid_server_port: 8000
+bid_webmaster_email: webmaster@local.com

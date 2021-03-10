@@ -1,0 +1,62 @@
+---
+
+  - name: Install aptitude using apt
+    become: yes
+    apt: 
+      name=aptitude state=latest update_cache=yes force_apt_get=yes
+
+  - name: Install required system packages
+    become: yes
+    apt: name={{ item }} state=latest update_cache=yes
+    loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'python3-pip', 'virtualenv', 'python3-setuptools']
+
+  - name: Add Docker GPG apt Key
+    become: yes
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add Docker Repository
+    become: yes
+    apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu bionic stable
+      state: present
+
+  - name: Install Docker - Update apt and install docker-ce
+    become: yes
+    apt: update_cache=yes name=docker-ce state=latest
+
+  - name: Add user to docker group with sudo
+    shell: sudo usermod -aG docker vagrant
+
+  - name: Reset connection so groups take effect
+    meta: reset_connection
+
+  - name: Restart Docker
+    shell: sudo systemctl restart docker
+
+  - name: Launch Docker - create storage directory
+    file:
+      path: /data/storage
+      state: directory
+
+  - name: Launch Docker - change storage owner
+    command: chown -R vagrant:vagrant /data/storage
+    become: yes 
+
+  - name: Launch Docker - mongo
+    command: docker run -d -v /data/db:/data/db -p 27017:27017 --name mongo mongo
+
+  - name: Launch Docker - redis
+    command: docker run -d -p 6379:6379 --name redis redis
+
+  - name: Launch Docker - rabbitmq
+    command: docker run -d -p 5672:5672 --name rabbit rabbitmq
+
+  - name: Launch Docker - Add names to /etc/hosts
+    become: yes
+    lineinfile:
+      path: /etc/hosts
+      line: "127.0.0.1 localhost id.local {{bc_server_name}} elastic kibana mongodb mongo redis rabbit"
+
+...

@@ -1,0 +1,59 @@
+---
+
+  - name: Install required system packages
+    become: yes
+    apt: name={{ item }} state=latest update_cache=yes
+    loop: [ 'mysql-server', 'mysql-client', 'libmysqlclient-dev']
+
+# MySQL 
+  - name: MySQL - Ensure mySQL is running and starts on boot
+    service: name=mysql state=started enabled=true
+    become: yes
+
+  - name: MySQL - Stop MySQL
+    service: name=mysql state=stopped
+    become: yes
+
+  - name: MySQL - set environment variables
+    shell: systemctl set-environment MYSQLD_OPTS="--skip-grant-tables"
+    become: yes
+
+  - name: MySQL - Start MySQL
+    service: name=mysql state=started
+    become: yes
+
+  - name: MySQL - Change Root Password
+    command:  mysql -u root --execute="ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';"
+    become: yes
+    ignore_errors: yes
+
+  - name: Create ~/.my.cnf
+    file:
+      path: /home/{{bid_user}}/.my.cnf
+      state: touch
+  
+  - name: Insert into ~/.my.cnf
+    blockinfile:
+      path: /home/{{bid_user}}/.my.cnf
+      block: |
+        [client]
+        user=root
+        password=root
+
+  - name: MySQL - sql query flush
+    command:  mysql -u root --execute="FLUSH PRIVILEGES"
+
+  - name: MySQL - Stop MySQL
+    service: name=mysql state=stopped
+    become: yes
+
+  - name: MySQL - unset environment variables
+    shell: systemctl unset-environment MYSQLD_OPTS
+    become: yes
+
+  - name: MySQL - Start MySQL
+    service: name=mysql state=started
+    become: yes
+
+
+...

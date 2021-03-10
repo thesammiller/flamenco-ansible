@@ -1,0 +1,49 @@
+---
+
+##########################################################
+#
+# Flamenco Manager
+#
+##########################################################
+
+  - name: Install Flamenco - Manager Directory
+    file:
+      path: /home/{{flamenco_user}}/flamenco-manager
+      state: directory
+
+  - name: Install Flamenco - Manager Download
+    get_url: 
+      url: https://www.flamenco.io/download/flamenco-manager-2.7-linux.tar.gz
+      dest: /home/{{flamenco_user}}
+
+  - name: Install Flamenco - Manager Unarchive
+    unarchive:
+      src: /home/{{flamenco_user}}/flamenco-manager-2.7-linux.tar.gz
+      dest: /home/{{flamenco_user}}/flamenco-manager
+      remote_src: yes
+
+##################################################
+#
+# Worker
+#
+################################################
+
+  - name: Install Flamenco - Worker Directory
+    file:
+      path: /home/{{flamenco_user}}/flamenco-worker
+      state: directory
+
+  - name: Install Flamenco - Worker Download
+    get_url:
+      url: https://www.flamenco.io/download/flamenco-worker-2.4-linux.tar.gz
+      dest: /home/{{flamenco_user}}
+
+
+  - name: Install Flamenco - worker Unarchive
+    unarchive:
+      src: /home/{{flamenco_user}}/flamenco-worker-2.4-linux.tar.gz
+      dest: /home/{{flamenco_user}}/flamenco-worker
+      remote_src: yes
+
+
+...

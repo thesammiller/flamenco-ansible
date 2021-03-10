@@ -1,0 +1,118 @@
+---
+
+  - name: Config Local - create config-local.py
+    shell: cp config_local.example.py config_local.py
+    args:
+      chdir: /data/git/blender-cloud
+
+  - name: Config Local - create config directory
+    file:
+      path: /data/config
+      state: directory
+
+
+  - name: Config Local - create JWT keys
+    shell: "{{ item }}"
+    args:
+      chdir: /data/git/
+    with_items:
+      - openssl ecparam -genkey -name prime256v1 -noout -out es256-private.pem
+      - openssl ec -in es256-private.pem -pubout -out es256-public.pem
+      - mv *.pem /data/config
+
+
+  - name: Config Local - JWT Private Key
+    lineinfile:
+      path: /data/git/blender-cloud/config_local.py
+      line: "FLAMENCO_JWT_PRIVATE_KEY_PATH='/data/config/es256-private.pem'"
+
+  - name: Config Local - JWT Public Key
+    lineinfile:
+      path: /data/git/blender-cloud/config_local.py
+      line: "FLAMENCO_JWT_PUBLIC_KEYS_PATH='/data/config/es256-public.pem'"
+
+  - name: Config Local - replace 5001
+    lineinfile:
+      dest: /data/git/blender-cloud/config_local.py
+      state: present
+      regexp: SERVER_NAME = 'cloud.local:5001'
+      line: SERVER_NAME = '{{ bc_server_name }}:{{ bc_server_port }}'
+
+  - name: Config Local - replace SECRET KEY
+    lineinfile:
+      dest: /data/git/blender-cloud/config_local.py
+      regexp: SECRET_KEY = '##DEFINE##'
+      line: SECRET_KEY = '{{ bc_secret }}'
+      state: present
+
+  - name: Config Local - replace 5001 in runserver.py
+    lineinfile:
+      dest: /data/git/blender-cloud/runserver.py
+      regexp: app.run
+      line: "    app.run('::0', {{ bc_server_port }}, debug=True)"
+      state: present
+
+  - name: Config Local - replace OAUTH CREDENTIALS ID 
+    lineinfile:
+      dest: /data/git/blender-cloud/config_local.py
+      regexp: "'id'"
+      line: "        'id': '{{ bc_oauth_blender_id }}',"
+      state: present
+
+
+  - name: Config Local - replace OAUTH CREDENTIALS secret
+    lineinfile:
+      dest: /data/git/blender-cloud/config_local.py
+      regexp: "secret"
+      line: "        'secret': '{{ bc_secret }}'"
+      state: present
+
+  - name: Config Local - initial setup
+    shell: poetry run ./manage.py setup setup_db {{ bc_webmaster_email }}
+    args:
+      chdir: /data/git/blender-cloud
+    register: poetry_output
+
+  # Take the output from setting up the server
+  # We need to save it to parse it for the project ID
+  - set_fact:
+      main_project_id: "{{ poetry_output.stdout_lines[-1] }}"
+
+  # Parse the output from setup so that we can get the project ID
+  - name: Get Project ID
+    shell: python3 -c "PROJECT_ID_INDEX = 2; last_line = '{{main_project_id}}'.split(); project_id = last_line[PROJECT_ID_INDEX]; print(project_id)"
+    register: project_id
+
+  - name: Config Local - replace main project ID
+    lineinfile:
+      dest: /data/git/blender-cloud/config_local.py
+      regexp: MAIN_PROJECT_ID
+      line: "MAIN_PROJECT_ID = '{{ project_id.stdout }}' "
+      state: present
+
+
+  - name: Run Blender Cloud Server
+    shell: poetry run ./manage.py runserver
+    async: 36000
+    poll: 0
+    args:
+      chdir: /data/git/blender-cloud
+
+  - name: Wait a minute for server to start up...
+    pause:
+      minutes: 1
+
+  - name: Curl Cloud Local
+    shell: curl {{ bc_server_name}}:{{ bc_server_port }}/welcome
+
+  - name: Install Py.Test
+    shell: "{{ item }}"
+    with_items:
+      - poetry run pip3 install pytest
+      - poetry run pip3 install pytest-cov
+      - poetry run pip3 install responses
+    args:
+      chdir: /data/git/blender-cloud
+      
+
+...

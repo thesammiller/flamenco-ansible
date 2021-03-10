@@ -1,0 +1,15 @@
+---
+
+  - name: Get facts of the VM   
+    debug:                      
+       var: ansible_facts       
+                                
+
+  - name: Print IPv4 data of VM   
+    debug:                      
+       var: ansible_facts['enp0s3']['ipv4']
+                             
+                             
+
+...
+

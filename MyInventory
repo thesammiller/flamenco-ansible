@@ -1,0 +1,12 @@
+[MyLocalVMs]
+127.0.0.1  ansible_connection=local
+
+[BlenderCloud]
+127.0.0.1 ansible_connect=local
+
+[BlenderID]
+127.0.0.1 ansible_connect=local
+
+[Flamenco]
+127.0.0.1 ansible_connect=local
+

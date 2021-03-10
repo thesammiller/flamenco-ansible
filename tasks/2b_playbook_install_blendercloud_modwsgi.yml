@@ -1,0 +1,51 @@
+---
+
+  - name: Install Mod-WSGI - Create Directories
+    ansible.builtin.file:
+      path: /dpkg
+      state: directory
+      mode: '0755'
+    become: yes
+
+  - name: Install Mod-WSGI - Download Source
+    shell: apt-get source libapache2-mod-wsgi-py3
+    args: 
+      chdir: /dpkg
+    become: yes
+
+  - name: Install Mod-WSGI - Configure
+    shell: "{{ item }}"
+    args:
+      chdir: /dpkg/mod-wsgi-4.5.17
+    with_items:
+      - ./configure --with-python=/opt/python/bin/python3
+      - make -j8 install 
+    become: yes
+
+  - name: Install Mod-WSGI - Create Directories
+    ansible.builtin.file:
+      path: /opt/python/mod-wsgi
+      state: directory
+      mode: '0755'
+    become: yes
+
+  - name: Install Mod-WSGI - Copy Library Object
+    command: cp /usr/lib/apache2/modules/mod_wsgi.so /opt/python/mod-wsgi
+    become: yes
+
+  - name: Install Python - change ownership
+    command: chown -R {{bc_user}}:{{bc_user}} /dpkg
+    become: yes
+     
+  - name: Install Mod-WSGI - Python Install
+    shell: /opt/python/bin/python3 setup.py install
+    args:
+      chdir: /dpkg/mod-wsgi-4.5.17
+    become: yes
+
+  - name: Install Python - lib to ld.so.conf.d
+    command: echo "/opt/python/lib" > /etc/ld.so.conf.d/python.conf
+    become: yes
+
+
+...

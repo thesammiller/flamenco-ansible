@@ -1,0 +1,43 @@
+---
+#
+# Blender ID - Flamenco Server Installation
+# Author: Sam Miller
+# Created: Spring 2021
+# Modified: Spring 2021
+#
+
+  - name: Clone Git Files - blender-id.git
+    ansible.builtin.git:
+      repo: git://git.blender.org/blender-id.git
+      dest: /data/git/blender-id
+    
+  - name: Blender ID - Copy Settings
+    shell: cp /data/git/blender-id/blenderid/__settings.py /data/git/blender-id/blenderid/settings.py
+
+  - name: Blender ID - Git Submodule Init
+    shell: git submodule init
+    args:
+      chdir: /data/git/blender-id     
+
+  - name: Blender ID - Git Submodule Update
+    shell: git submodule update
+    args:
+      chdir: /data/git/blender-id
+
+  - name: Install Python Pip - 
+    command: sudo apt-get install python3-pip
+
+  - name: Install Poetry - pip3 wheel poetry
+    command: pip3 install wheel poetry==1.0
+
+#  - name: Blender ID - install pipenv
+#    shell: poetry run pip install pipenv
+#    args:
+#      chdir: /data/git/blender-id
+
+#  - name: Blender ID - create pipenv
+#    shell: poetry run pipenv install --dev
+#    args:
+#      chdir: /data/git/blender-id
+
+...

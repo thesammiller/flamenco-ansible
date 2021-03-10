@@ -1,0 +1,9 @@
+
+---
+
+  - name: X11 - Install required packages
+    become: yes
+    apt: name={{ item }} state=latest update_cache=yes
+    loop: [ 'xfce4', 'xfce4-goodies', 'xorg', 'dbus-x11', 'x11-xserver-utils', 'firefox']
+
+...
